@@ -139,57 +139,57 @@ export default function Game() {
       const color = type === 'good' ? 0x00ff00 : 0xff0000;
       const emissive = type === 'good' ? 0x00ff00 : 0xff0000;
       
-      // Gate posts
-      const postGeometry = new THREE.BoxGeometry(0.3, 4, 0.3);
+      // Gate posts - taller and more visible
+      const postGeometry = new THREE.BoxGeometry(0.4, 5, 0.4);
       const postMaterial = new THREE.MeshStandardMaterial({ 
         color, 
         emissive, 
-        emissiveIntensity: 0.8 
+        emissiveIntensity: 1.0 
       });
       
       const leftPost = new THREE.Mesh(postGeometry, postMaterial);
-      leftPost.position.set(-2, 2, 0);
+      leftPost.position.set(-2.5, 2.5, 0);
       group.add(leftPost);
       
       const rightPost = new THREE.Mesh(postGeometry, postMaterial);
-      rightPost.position.set(2, 2, 0);
+      rightPost.position.set(2.5, 2.5, 0);
       group.add(rightPost);
       
-      // Top bar
+      // Top bar - wider and more visible
       const topGeometry = type === 'good' 
-        ? new THREE.BoxGeometry(4.6, 0.5, 0.3)
-        : new THREE.BoxGeometry(4.6, 0.8, 0.3);
+        ? new THREE.BoxGeometry(5.4, 0.6, 0.4)
+        : new THREE.BoxGeometry(5.4, 1.0, 0.4);
       const topMesh = new THREE.Mesh(topGeometry, postMaterial);
-      topMesh.position.set(0, 4, 0);
+      topMesh.position.set(0, 5, 0);
       group.add(topMesh);
       
       // Spikes for bad gates
       if (type === 'bad') {
-        for (let i = -2; i <= 2; i += 0.8) {
-          const spikeGeometry = new THREE.ConeGeometry(0.2, 0.8, 4);
+        for (let i = -2.5; i <= 2.5; i += 1.0) {
+          const spikeGeometry = new THREE.ConeGeometry(0.3, 1.0, 4);
           const spike = new THREE.Mesh(spikeGeometry, postMaterial);
-          spike.position.set(i, 3.5, 0);
+          spike.position.set(i, 4.3, 0);
           spike.rotation.x = Math.PI;
           group.add(spike);
         }
       }
       
-      // Text label
+      // Text label - larger and more readable
       const textCanvas = document.createElement('canvas');
-      textCanvas.width = 512;
-      textCanvas.height = 128;
+      textCanvas.width = 1024;
+      textCanvas.height = 256;
       const textCtx = textCanvas.getContext('2d')!;
       textCtx.fillStyle = type === 'good' ? '#00ff00' : '#ff0000';
-      textCtx.font = 'bold 48px Arial';
+      textCtx.font = 'bold 80px Arial';
       textCtx.textAlign = 'center';
       textCtx.textBaseline = 'middle';
-      textCtx.fillText(text, 256, 64);
+      textCtx.fillText(text, 512, 128);
       
       const textTexture = new THREE.CanvasTexture(textCanvas);
       const textMaterial = new THREE.MeshBasicMaterial({ map: textTexture, transparent: true });
-      const textGeometry = new THREE.PlaneGeometry(4, 1);
+      const textGeometry = new THREE.PlaneGeometry(5, 1.5);
       const textMesh = new THREE.Mesh(textGeometry, textMaterial);
-      textMesh.position.set(0, 2, 0.2);
+      textMesh.position.set(0, 2.5, 0.3);
       group.add(textMesh);
       
       group.position.set(lanePositions[lane], 0, z);
@@ -473,4 +473,5 @@ export default function Game() {
     </div>
   );
 }
+
 
