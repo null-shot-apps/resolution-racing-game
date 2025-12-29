@@ -28,7 +28,8 @@ export default function Game() {
   }, [countdown, gameState]);
 
   useEffect(() => {
-    if (!mountRef.current || gameState === 'countdown') return;
+    if (!mountRef.current) return;
+    if (gameState !== 'playing') return;
 
     // Scene setup
     const scene = new THREE.Scene();
@@ -412,7 +413,7 @@ export default function Game() {
       window.removeEventListener('resize', handleResize);
       mountRef.current?.removeChild(renderer.domElement);
     };
-  }, []);
+  }, [gameState]);
 
   const handleRestart = () => {
     setScore(50);
@@ -497,6 +498,8 @@ export default function Game() {
     </div>
   );
 }
+
+
 
 
 
