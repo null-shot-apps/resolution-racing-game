@@ -10,13 +10,25 @@ const BAD_TEXTS = ["Rekt", "Drain", "Rug Pull", "Bear Market", "Liquidation", "F
 export default function Game() {
   const mountRef = useRef<HTMLDivElement>(null);
   const [score, setScore] = useState(50);
-  const [gameState, setGameState] = useState<'playing' | 'gameover' | 'victory'>('playing');
+  const [gameState, setGameState] = useState<'countdown' | 'playing' | 'gameover' | 'victory'>('countdown');
   const [comboCount, setComboCount] = useState(0);
   const [bullRunActive, setBullRunActive] = useState(false);
   const [floatingText, setFloatingText] = useState<string>('');
+  const [countdown, setCountdown] = useState(3);
 
   useEffect(() => {
-    if (!mountRef.current) return;
+    if (gameState === 'countdown') {
+      if (countdown > 0) {
+        const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
+        return () => clearTimeout(timer);
+      } else {
+        setGameState('playing');
+      }
+    }
+  }, [countdown, gameState]);
+
+  useEffect(() => {
+    if (!mountRef.current || gameState === 'countdown') return;
 
     // Scene setup
     const scene = new THREE.Scene();
@@ -403,7 +415,12 @@ export default function Game() {
   }, []);
 
   const handleRestart = () => {
-    window.location.reload();
+    setScore(50);
+    setGameState('countdown');
+    setCountdown(3);
+    setComboCount(0);
+    setBullRunActive(false);
+    setFloatingText('');
   };
 
   return (
@@ -433,6 +450,16 @@ export default function Game() {
         </div>
       )}
       
+      {/* Countdown Screen */}
+      {gameState === 'countdown' && (
+        <div className="absolute inset-0 bg-black bg-opacity-90 flex flex-col items-center justify-center">
+          <h1 className="text-cyan-400 text-8xl font-bold mb-8">
+            {countdown > 0 ? countdown : 'GO!'}
+          </h1>
+          <p className="text-white text-2xl">Get Ready!</p>
+        </div>
+      )}
+
       {/* Game Over Screen */}
       {gameState === 'gameover' && (
         <div className="absolute inset-0 bg-black bg-opacity-80 flex flex-col items-center justify-center">
@@ -470,6 +497,9 @@ export default function Game() {
     </div>
   );
 }
+
+
+
 
 
 
