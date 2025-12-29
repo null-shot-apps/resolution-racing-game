@@ -469,7 +469,7 @@ export default function Game() {
 
       {/* Game Over Screen */}
       {gameState === 'gameover' && (
-        <div className="absolute inset-0 bg-black bg-opacity-80 flex flex-col items-center justify-center">
+        <div className="absolute inset-0 bg-black bg-opacity-70 flex flex-col items-center justify-center z-50 pointer-events-auto">
           <h1 className="text-red-500 text-6xl font-bold mb-8">GAME OVER</h1>
           <p className="text-white text-2xl mb-8">Try Again!</p>
           <button
@@ -483,7 +483,7 @@ export default function Game() {
       
       {/* Victory Screen */}
       {gameState === 'victory' && (
-        <div className="absolute inset-0 bg-black bg-opacity-80 flex flex-col items-center justify-center">
+        <div className="absolute inset-0 bg-black bg-opacity-70 flex flex-col items-center justify-center z-50 pointer-events-auto">
           <h1 className="text-green-500 text-6xl font-bold mb-8 animate-pulse">CONGRATULATIONS!</h1>
           <p className="text-white text-3xl mb-8">READY FOR 2026! 🎉</p>
           <div className="text-6xl mb-8">🎊 🎉 ✨</div>
@@ -504,6 +504,7 @@ export default function Game() {
     </div>
   );
 }
+
 
 
 
