@@ -191,10 +191,10 @@ export default function Game() {
       // Text label - larger and more readable
       const textCanvas = document.createElement('canvas');
       textCanvas.width = 1024;
-      textCanvas.height = 256;
+      textCanvas.height = 512;
       const textCtx = textCanvas.getContext('2d')!;
       textCtx.fillStyle = type === 'good' ? '#00ff00' : '#ff0000';
-      textCtx.font = 'bold 80px Arial';
+      textCtx.font = 'bold 120px Arial';
       textCtx.textAlign = 'center';
       textCtx.textBaseline = 'middle';
       textCtx.fillText(text, 512, 128);
@@ -504,6 +504,7 @@ export default function Game() {
     </div>
   );
 }
+
 
 
 
