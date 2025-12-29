@@ -367,8 +367,8 @@ export default function Game() {
         }
       }
       
-      // Spawn new gates
-      if (lastGateZ > -60) {
+      // Spawn new gates continuously
+      if (lastGateZ > -100) {
         spawnGates();
       }
       
@@ -473,5 +473,6 @@ export default function Game() {
     </div>
   );
 }
+
 
 
