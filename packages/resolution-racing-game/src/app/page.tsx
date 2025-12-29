@@ -360,16 +360,13 @@ export default function Game() {
           }
         }
         
-        // Remove if too far
+        // Remove if too far and respawn
         if (obj.mesh.position.z > 15) {
           scene.remove(obj.mesh);
           gameObjects.splice(i, 1);
+          // Spawn new gates to keep them coming
+          spawnGates();
         }
-      }
-      
-      // Spawn new gates continuously when the last gate is close enough
-      if (lastGateZ > -60) {
-        spawnGates();
       }
       
       // Speed progression
@@ -473,6 +470,7 @@ export default function Game() {
     </div>
   );
 }
+
 
 
 
