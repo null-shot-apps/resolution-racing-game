@@ -23,8 +23,8 @@ export default function Game() {
     scene.fog = new THREE.Fog(0x000428, 10, 100);
     
     const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-    camera.position.set(0, 3, 8);
-    camera.lookAt(0, 1, 0);
+    camera.position.set(0, 8, 12);
+    camera.lookAt(0, 0, -10);
 
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
@@ -117,19 +117,40 @@ export default function Game() {
     // Game state
     let currentScore = 50;
     let currentCombo = 0;
-    let playerX = 0;
-    let gameSpeed = 0.3;
+    let playerLane = 0; // -1 = left, 0 = center, 1 = right
+    let targetX = 0;
+    let gameSpeed = 0.2;
     let bullRunMode = false;
     let bullRunTimer = 0;
     const gates: any[] = [];
     const powerups: any[] = [];
     let spawnTimer = 0;
     let isGameOver = false;
+    const LANE_WIDTH = 3.5;
 
-    // Input handling
-    const keys: { [key: string]: boolean } = {};
-    window.addEventListener('keydown', (e) => { keys[e.key] = true; });
-    window.addEventListener('keyup', (e) => { keys[e.key] = false; });
+    // Input handling - lane switching
+    let canSwitch = true;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!canSwitch) return;
+      
+      if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
+        if (playerLane > -1) {
+          playerLane--;
+          targetX = playerLane * LANE_WIDTH;
+          canSwitch = false;
+          setTimeout(() => canSwitch = true, 200);
+        }
+      }
+      if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
+        if (playerLane < 1) {
+          playerLane++;
+          targetX = playerLane * LANE_WIDTH;
+          canSwitch = false;
+          setTimeout(() => canSwitch = true, 200);
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
 
     // Create gate function
     function createGate(type: 'good' | 'bad', zPos: number, lane: number) {
@@ -176,16 +197,16 @@ export default function Game() {
         }
       }
       
-      // Text label
+      // Text label - larger and more readable
       const textCanvas = document.createElement('canvas');
-      textCanvas.width = 512;
-      textCanvas.height = 128;
+      textCanvas.width = 1024;
+      textCanvas.height = 256;
       const textCtx = textCanvas.getContext('2d')!;
       textCtx.fillStyle = isGood ? '#00ff00' : '#ff0000';
-      textCtx.font = 'bold 48px Arial';
+      textCtx.font = 'bold 80px Arial';
       textCtx.textAlign = 'center';
       textCtx.textBaseline = 'middle';
-      textCtx.fillText(text, 256, 64);
+      textCtx.fillText(text, 512, 128);
       
       const textTexture = new THREE.CanvasTexture(textCanvas);
       const textMaterial = new THREE.MeshBasicMaterial({ 
@@ -193,11 +214,11 @@ export default function Game() {
         transparent: true,
         side: THREE.DoubleSide
       });
-      const textMesh = new THREE.Mesh(new THREE.PlaneGeometry(3, 0.75), textMaterial);
-      textMesh.position.set(0, 3.5, 0);
+      const textMesh = new THREE.Mesh(new THREE.PlaneGeometry(4, 1), textMaterial);
+      textMesh.position.set(0, 3.8, 0);
       gateGroup.add(textMesh);
       
-      gateGroup.position.set(lane * 3, 0, zPos);
+      gateGroup.position.set(lane * 3.5, 0, zPos);
       scene.add(gateGroup);
       
       return { group: gateGroup, type, passed: false, hit: false };
@@ -224,7 +245,7 @@ export default function Game() {
       cylinder.position.z = -0.4;
       powerupGroup.add(cylinder);
       
-      powerupGroup.position.set(lane * 3, 1.5, zPos);
+      powerupGroup.position.set(lane * 3.5, 1.5, zPos);
       scene.add(powerupGroup);
       
       return { group: powerupGroup, hit: false };
@@ -255,14 +276,14 @@ export default function Game() {
       if (isGameOver) return;
       requestAnimationFrame(animate);
 
-      // Player movement
-      if (keys['ArrowLeft'] || keys['a']) {
-        playerX = Math.max(-3, playerX - 0.15);
+      // Smooth lane switching
+      const currentX = carGroup.position.x;
+      const diff = targetX - currentX;
+      if (Math.abs(diff) > 0.01) {
+        carGroup.position.x += diff * 0.3; // Smooth interpolation
+      } else {
+        carGroup.position.x = targetX;
       }
-      if (keys['ArrowRight'] || keys['d']) {
-        playerX = Math.min(3, playerX + 0.15);
-      }
-      carGroup.position.x = playerX;
 
       // Bull run mode timer
       if (bullRunMode) {
@@ -270,7 +291,10 @@ export default function Game() {
         if (bullRunTimer <= 0) {
           bullRunMode = false;
           setBullRunActive(false);
-          gameSpeed = 0.3;
+          // Reset to normal speed calculation
+          const baseSpeed = 0.2;
+          const speedIncrease = Math.floor(currentScore / 100) * 0.05;
+          gameSpeed = baseSpeed + speedIncrease;
         }
       }
 
@@ -282,20 +306,49 @@ export default function Game() {
         }
       });
 
-      // Spawn gates and powerups
+      // Spawn gates and powerups - multiple gates side by side
       spawnTimer += 0.016;
-      if (spawnTimer > 2) {
+      if (spawnTimer > 2.5) {
         spawnTimer = 0;
-        const lane = Math.floor(Math.random() * 3) - 1; // -1, 0, 1
-        const zPos = -60;
+        const zPos = -70;
         
-        // 5% chance for powerup
-        if (Math.random() < 0.05) {
-          powerups.push(createPowerup(zPos, lane));
+        // 10% chance for powerup in random lane
+        if (Math.random() < 0.1) {
+          const powerupLane = Math.floor(Math.random() * 3) - 1;
+          powerups.push(createPowerup(zPos, powerupLane));
         } else {
-          const type = Math.random() < 0.6 ? 'good' : 'bad';
-          gates.push(createGate(type, zPos, lane));
+          // Spawn 2-3 gates side by side (player must choose)
+          const numGates = Math.random() < 0.5 ? 2 : 3;
+          const availableLanes = [-1, 0, 1];
+          
+          // Shuffle lanes
+          for (let i = availableLanes.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [availableLanes[i], availableLanes[j]] = [availableLanes[j], availableLanes[i]];
+          }
+          
+          // Place gates - ensure at least one good gate
+          const hasGoodGate = Math.random() < 0.7;
+          for (let i = 0; i < numGates; i++) {
+            const lane = availableLanes[i];
+            let type: 'good' | 'bad';
+            
+            if (i === 0 && hasGoodGate) {
+              type = 'good';
+            } else {
+              type = Math.random() < 0.4 ? 'good' : 'bad';
+            }
+            
+            gates.push(createGate(type, zPos, lane));
+          }
         }
+      }
+      
+      // Increase speed over time based on score
+      const baseSpeed = 0.2;
+      const speedIncrease = Math.floor(currentScore / 100) * 0.05;
+      if (!bullRunMode) {
+        gameSpeed = baseSpeed + speedIncrease;
       }
 
       // Update gates
@@ -361,7 +414,7 @@ export default function Game() {
           powerup.hit = true;
           bullRunMode = true;
           bullRunTimer = 5;
-          gameSpeed = 0.6;
+          gameSpeed = gameSpeed * 1.8;
           setBullRunActive(true);
           showNotification('BULL RUN MODE! 2x Points!');
         }
@@ -396,8 +449,7 @@ export default function Game() {
 
     return () => {
       window.removeEventListener('resize', handleResize);
-      window.removeEventListener('keydown', () => {});
-      window.removeEventListener('keyup', () => {});
+      window.removeEventListener('keydown', handleKeyDown);
       if (mountRef.current) {
         mountRef.current.removeChild(renderer.domElement);
       }
@@ -472,4 +524,15 @@ export default function Game() {
     </div>
   );
 }
+
+
+
+
+
+
+
+
+
+
+
 
