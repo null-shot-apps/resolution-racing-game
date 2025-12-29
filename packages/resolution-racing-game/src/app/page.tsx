@@ -367,8 +367,8 @@ export default function Game() {
         }
       }
       
-      // Spawn new gates continuously
-      if (lastGateZ > -100) {
+      // Spawn new gates continuously when the last gate is close enough
+      if (lastGateZ > -60) {
         spawnGates();
       }
       
@@ -473,6 +473,7 @@ export default function Game() {
     </div>
   );
 }
+
 
 
 
