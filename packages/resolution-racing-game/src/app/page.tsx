@@ -22,14 +22,15 @@ export default function Game() {
         const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
         return () => clearTimeout(timer);
       } else {
-        setGameState('playing');
+        // Countdown finished, start playing
+        setTimeout(() => setGameState('playing'), 500);
       }
     }
   }, [countdown, gameState]);
 
   useEffect(() => {
     if (!mountRef.current) return;
-    if (gameState !== 'playing') return;
+    if (gameState !== 'playing' && gameState !== 'countdown') return;
 
     // Scene setup
     const scene = new THREE.Scene();
@@ -293,6 +294,12 @@ export default function Game() {
       
       requestAnimationFrame(animate);
       
+      // Don't update game logic during countdown
+      if (gameState === 'countdown') {
+        renderer.render(scene, camera);
+        return;
+      }
+      
       // Update car position (smooth lane switching)
       const targetX = lanePositions[currentLane];
       carGroup.position.x += (targetX - carGroup.position.x) * 0.2;
@@ -451,13 +458,12 @@ export default function Game() {
         </div>
       )}
       
-      {/* Countdown Screen */}
+      {/* Countdown Overlay */}
       {gameState === 'countdown' && (
-        <div className="absolute inset-0 bg-black bg-opacity-90 flex flex-col items-center justify-center">
-          <h1 className="text-cyan-400 text-8xl font-bold mb-8">
+        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+          <h1 className="text-cyan-400 text-9xl font-bold drop-shadow-[0_0_30px_rgba(0,255,255,1)] animate-pulse">
             {countdown > 0 ? countdown : 'GO!'}
           </h1>
-          <p className="text-white text-2xl">Get Ready!</p>
         </div>
       )}
 
@@ -498,6 +504,9 @@ export default function Game() {
     </div>
   );
 }
+
+
+
 
 
 
