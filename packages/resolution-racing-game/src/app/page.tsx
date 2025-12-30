@@ -203,7 +203,7 @@ export default function Game() {
       const textMaterial = new THREE.MeshBasicMaterial({ map: textTexture, transparent: true });
       const textGeometry = new THREE.PlaneGeometry(5, 1.5);
       const textMesh = new THREE.Mesh(textGeometry, textMaterial);
-      textMesh.position.set(0, 2.5, 0.3);
+      textMesh.position.set(0, 6, 0.3);
       group.add(textMesh);
       
       group.position.set(lanePositions[lane], 0, z);
@@ -504,6 +504,7 @@ export default function Game() {
     </div>
   );
 }
+
 
 
 
