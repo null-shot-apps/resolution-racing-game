@@ -396,7 +396,7 @@ export default function Game() {
       if (currentScore <= 0) {
         isGameOver = true;
         setGameState('gameover');
-      } else if (currentScore >= 500) {
+      } else if (currentScore >= 1000) {
         isGameOver = true;
         setGameState('victory');
       }
@@ -504,6 +504,7 @@ export default function Game() {
     </div>
   );
 }
+
 
 
 
