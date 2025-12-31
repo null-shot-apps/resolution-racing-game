@@ -769,30 +769,34 @@ export default function Game() {
 
       {/* Game Over Screen */}
       {gameState === 'gameover' && (
-        <div className="absolute inset-0 bg-black bg-opacity-70 flex flex-col items-center justify-center z-50 pointer-events-auto">
-          <h1 className="text-red-500 text-6xl font-bold mb-8">GAME OVER</h1>
-          <p className="text-white text-2xl mb-8">Try Again!</p>
-          <button
-            onClick={handleRestart}
-            className="px-8 py-4 bg-red-500 text-white text-xl font-bold rounded-lg hover:bg-red-600 transition"
-          >
-            Restart
-          </button>
+        <div className="absolute inset-0 flex items-center justify-center z-50 pointer-events-none">
+          <div className="bg-black bg-opacity-90 rounded-2xl p-8 max-w-sm pointer-events-auto border-2 border-red-500">
+            <h1 className="text-red-500 text-4xl font-bold mb-4">GAME OVER</h1>
+            <p className="text-white text-xl mb-6">Try Again!</p>
+            <button
+              onClick={handleRestart}
+              className="px-6 py-3 bg-red-500 text-white text-lg font-bold rounded-lg hover:bg-red-600 transition w-full"
+            >
+              Restart
+            </button>
+          </div>
         </div>
       )}
       
       {/* Victory Screen */}
       {gameState === 'victory' && (
-        <div className="absolute inset-0 bg-black bg-opacity-70 flex flex-col items-center justify-center z-50 pointer-events-auto">
-          <h1 className="text-green-500 text-6xl font-bold mb-8 animate-pulse">CONGRATULATIONS!</h1>
-          <p className="text-white text-3xl mb-8">READY FOR 2026! 🎉</p>
-          <div className="text-6xl mb-8">🎊 🎉 ✨</div>
-          <button
-            onClick={handleRestart}
-            className="px-8 py-4 bg-green-500 text-white text-xl font-bold rounded-lg hover:bg-green-600 transition"
-          >
-            Play Again
-          </button>
+        <div className="absolute inset-0 flex items-center justify-center z-50 pointer-events-none">
+          <div className="bg-black bg-opacity-90 rounded-2xl p-8 max-w-sm pointer-events-auto border-2 border-green-500">
+            <h1 className="text-green-500 text-4xl font-bold mb-4 animate-pulse">CONGRATULATIONS!</h1>
+            <p className="text-white text-2xl mb-4">READY FOR 2026! 🎉</p>
+            <div className="text-4xl mb-6">🎊 🎉 ✨</div>
+            <button
+              onClick={handleRestart}
+              className="px-6 py-3 bg-green-500 text-white text-lg font-bold rounded-lg hover:bg-green-600 transition w-full"
+            >
+              Play Again
+            </button>
+          </div>
         </div>
       )}
       
@@ -805,6 +809,7 @@ export default function Game() {
     </div>
   );
 }
+
 
 
 
