@@ -124,6 +124,30 @@ export default function Game() {
     carTop.position.set(0, 0.8, -0.3);
     carGroup.add(carTop);
     
+    // Add round wheels
+    const wheelGeometry = new THREE.CylinderGeometry(0.3, 0.3, 0.3, 16);
+    const wheelMaterial = new THREE.MeshStandardMaterial({ color: 0x222222 });
+    
+    const wheelFL = new THREE.Mesh(wheelGeometry, wheelMaterial);
+    wheelFL.rotation.z = Math.PI / 2;
+    wheelFL.position.set(-0.8, 0.3, 1);
+    carGroup.add(wheelFL);
+    
+    const wheelFR = new THREE.Mesh(wheelGeometry, wheelMaterial);
+    wheelFR.rotation.z = Math.PI / 2;
+    wheelFR.position.set(0.8, 0.3, 1);
+    carGroup.add(wheelFR);
+    
+    const wheelRL = new THREE.Mesh(wheelGeometry, wheelMaterial);
+    wheelRL.rotation.z = Math.PI / 2;
+    wheelRL.position.set(-0.8, 0.3, -1);
+    carGroup.add(wheelRL);
+    
+    const wheelRR = new THREE.Mesh(wheelGeometry, wheelMaterial);
+    wheelRR.rotation.z = Math.PI / 2;
+    wheelRR.position.set(0.8, 0.3, -1);
+    carGroup.add(wheelRR);
+    
     carGroup.position.set(0, 0, 5);
     scene.add(carGroup);
 
@@ -432,7 +456,7 @@ export default function Game() {
       const badText = BAD_TEXTS[Math.floor(Math.random() * BAD_TEXTS.length)];
       
       gameObjects.push(createGate('good', goodLane, z, goodText));
-      gameObjects.push(createGate('bad', badLane, z, badText));
+      gameObjects.push(createGate('bad', badLane, z - 3, badText));
     }
 
     // Initial gates
@@ -666,7 +690,7 @@ export default function Game() {
       if (currentScore <= 0) {
         isGameOver = true;
         setGameState('gameover');
-      } else if (currentScore >= 1000) {
+      } else if (currentScore >= 2000) {
         isGameOver = true;
         setGameState('victory');
       }
@@ -781,6 +805,9 @@ export default function Game() {
     </div>
   );
 }
+
+
+
 
 
 
