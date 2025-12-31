@@ -14,6 +14,7 @@ export default function Game() {
   const [comboCount, setComboCount] = useState(0);
   const [bullRunActive, setBullRunActive] = useState(false);
   const [floatingText, setFloatingText] = useState<string>('');
+  const [fudStormWarning, setFudStormWarning] = useState(false);
   const [countdown, setCountdown] = useState(3);
 
   useEffect(() => {
@@ -138,13 +139,71 @@ export default function Game() {
 
     interface GameObject {
       mesh: THREE.Group;
-      type: 'good' | 'bad' | 'rocket';
+      type: 'good' | 'bad' | 'rocket' | 'meteor' | 'gacha';
       lane: number;
       passed: boolean;
       text?: string;
+      gachaEffect?: 'jackpot' | 'bullrun' | 'fog' | 'mini';
+      velocity?: number;
     }
 
     const gameObjects: GameObject[] = [];
+    
+    // Audio context for sound effects
+    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+    
+    // Sound effect functions
+    function playHitSound() {
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      oscillator.frequency.value = 200;
+      oscillator.type = 'square';
+      gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + 0.2);
+    }
+    
+    function playCollectSound() {
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      oscillator.frequency.value = 800;
+      oscillator.type = 'sine';
+      gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + 0.3);
+    }
+    
+    function playCashRegisterSound() {
+      const oscillator1 = audioContext.createOscillator();
+      const oscillator2 = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      oscillator1.connect(gainNode);
+      oscillator2.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      oscillator1.frequency.value = 1200;
+      oscillator2.frequency.value = 1600;
+      oscillator1.type = 'sine';
+      oscillator2.type = 'sine';
+      gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.4);
+      oscillator1.start(audioContext.currentTime);
+      oscillator2.start(audioContext.currentTime + 0.1);
+      oscillator1.stop(audioContext.currentTime + 0.4);
+      oscillator2.stop(audioContext.currentTime + 0.5);
+    }
+    
+    // FUD Storm state
+    let fudStormTimer = 15 + Math.random() * 5; // 15-20 seconds
+    let fogEffect = 0;
+    let miniModeTimer = 0;
+    let carSpinning = false;
+    let spinRotation = 0;
 
     // Create gate with text
     function createGate(type: 'good' | 'bad', lane: number, z: number, text: string) {
@@ -243,11 +302,117 @@ export default function Game() {
       
       return { mesh: group, type: 'rocket' as const, lane, passed: false };
     }
+    
+    // Create meteor (FUD Storm)
+    function createMeteor(lane: number, z: number) {
+      const group = new THREE.Group();
+      
+      const meteorGeometry = new THREE.SphereGeometry(0.6, 16, 16);
+      const meteorMaterial = new THREE.MeshStandardMaterial({ 
+        color: 0xff6600, 
+        emissive: 0xff6600, 
+        emissiveIntensity: 1.5 
+      });
+      const meteor = new THREE.Mesh(meteorGeometry, meteorMaterial);
+      meteor.position.y = 15; // Start high up
+      group.add(meteor);
+      
+      // Glow
+      const glowGeometry = new THREE.SphereGeometry(0.9, 16, 16);
+      const glowMaterial = new THREE.MeshBasicMaterial({ 
+        color: 0xff6600, 
+        transparent: true, 
+        opacity: 0.4 
+      });
+      const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+      glow.position.y = 15;
+      group.add(glow);
+      
+      group.position.set(lanePositions[lane], 0, z);
+      scene.add(group);
+      
+      return { mesh: group, type: 'meteor' as const, lane, passed: false, velocity: 0.3 };
+    }
+    
+    // Create gacha box
+    function createGachaBox(lane: number, z: number) {
+      const group = new THREE.Group();
+      
+      // Purple box
+      const boxGeometry = new THREE.BoxGeometry(1.2, 1.2, 1.2);
+      const boxMaterial = new THREE.MeshStandardMaterial({ 
+        color: 0x9900ff, 
+        emissive: 0x9900ff, 
+        emissiveIntensity: 0.8 
+      });
+      const box = new THREE.Mesh(boxGeometry, boxMaterial);
+      box.position.y = 1.5;
+      group.add(box);
+      
+      // Question mark
+      const canvas = document.createElement('canvas');
+      canvas.width = 256;
+      canvas.height = 256;
+      const ctx = canvas.getContext('2d')!;
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 200px Arial';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('?', 128, 128);
+      
+      const texture = new THREE.CanvasTexture(canvas);
+      const textMaterial = new THREE.MeshBasicMaterial({ map: texture, transparent: true });
+      const textGeometry = new THREE.PlaneGeometry(1, 1);
+      const textMesh = new THREE.Mesh(textGeometry, textMaterial);
+      textMesh.position.set(0, 1.5, 0.61);
+      group.add(textMesh);
+      
+      // Glow
+      const glowGeometry = new THREE.BoxGeometry(1.4, 1.4, 1.4);
+      const glowMaterial = new THREE.MeshBasicMaterial({ 
+        color: 0x9900ff, 
+        transparent: true, 
+        opacity: 0.3 
+      });
+      const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+      glow.position.y = 1.5;
+      group.add(glow);
+      
+      group.position.set(lanePositions[lane], 0, z);
+      scene.add(group);
+      
+      // Random gacha effect
+      const effects: ('jackpot' | 'bullrun' | 'fog' | 'mini')[] = ['jackpot', 'bullrun', 'fog', 'mini'];
+      const effect = effects[Math.floor(Math.random() * effects.length)];
+      
+      return { mesh: group, type: 'gacha' as const, lane, passed: false, gachaEffect: effect };
+    }
+    
+    // Trigger FUD Storm
+    function triggerFudStorm() {
+      setFudStormWarning(true);
+      setTimeout(() => setFudStormWarning(false), 2000);
+      
+      // Spawn 5-10 meteors
+      const meteorCount = 5 + Math.floor(Math.random() * 6);
+      for (let i = 0; i < meteorCount; i++) {
+        const lane = Math.floor(Math.random() * 3);
+        const z = -20 - Math.random() * 40;
+        gameObjects.push(createMeteor(lane, z));
+      }
+    }
 
     // Spawn gates
     function spawnGates() {
       const z = lastGateZ - 20;
       lastGateZ = z;
+      
+      // Randomly spawn gacha box (5% chance)
+      if (Math.random() < 0.05) {
+        const gachaLane = Math.floor(Math.random() * 3);
+        gameObjects.push(createGachaBox(gachaLane, z));
+        return;
+      }
       
       // Randomly spawn rocket (10% chance)
       if (Math.random() < 0.1) {
@@ -304,6 +469,42 @@ export default function Game() {
       const targetX = lanePositions[currentLane];
       carGroup.position.x += (targetX - carGroup.position.x) * 0.2;
       
+      // Handle car spinning
+      if (carSpinning) {
+        spinRotation += 0.15;
+        carGroup.rotation.y = spinRotation;
+        if (spinRotation >= Math.PI * 2) {
+          carSpinning = false;
+          spinRotation = 0;
+          carGroup.rotation.y = 0;
+        }
+      }
+      
+      // Update mini mode
+      if (miniModeTimer > 0) {
+        miniModeTimer -= 0.016;
+        carGroup.scale.set(0.5, 0.5, 0.5);
+        if (miniModeTimer <= 0) {
+          carGroup.scale.set(1, 1, 1);
+        }
+      }
+      
+      // Update fog effect
+      if (fogEffect > 0) {
+        fogEffect -= 0.016;
+        scene.fog = new THREE.Fog(0x000510, 5, 30);
+        if (fogEffect <= 0) {
+          scene.fog = new THREE.Fog(0x000510, 10, 100);
+        }
+      }
+      
+      // FUD Storm timer
+      fudStormTimer -= 0.016;
+      if (fudStormTimer <= 0) {
+        triggerFudStorm();
+        fudStormTimer = 15 + Math.random() * 5;
+      }
+      
       // Update bull run timer
       if (bullRunTimer > 0) {
         bullRunTimer -= 0.016;
@@ -324,18 +525,33 @@ export default function Game() {
       // Move and check game objects
       for (let i = gameObjects.length - 1; i >= 0; i--) {
         const obj = gameObjects[i];
-        obj.mesh.position.z += gameSpeed;
         
-        // Rotation for rockets
+        // Special movement for meteors (falling)
+        if (obj.type === 'meteor') {
+          obj.mesh.position.z += gameSpeed;
+          obj.mesh.children[0].position.y -= obj.velocity!;
+          obj.mesh.children[1].position.y -= obj.velocity!;
+          obj.mesh.rotation.x += 0.1;
+          obj.mesh.rotation.y += 0.05;
+        } else {
+          obj.mesh.position.z += gameSpeed;
+        }
+        
+        // Rotation for rockets and gacha boxes
         if (obj.type === 'rocket') {
           obj.mesh.rotation.y += 0.05;
+        } else if (obj.type === 'gacha') {
+          obj.mesh.rotation.y += 0.03;
+          obj.mesh.children[0].position.y = 1.5 + Math.sin(Date.now() * 0.003) * 0.3;
         }
         
         // Check collision
-        if (obj.mesh.position.z > 3 && obj.mesh.position.z < 7 && !obj.passed) {
+        const collisionZ = obj.type === 'meteor' ? (obj.mesh.children[0].position.y <= 1) : (obj.mesh.position.z > 3 && obj.mesh.position.z < 7);
+        
+        if (collisionZ && !obj.passed) {
           obj.passed = true;
           
-          if (obj.lane === currentLane) {
+          if (obj.lane === currentLane || (obj.type === 'meteor' && obj.mesh.children[0].position.y <= 1)) {
             // Hit the object
             if (obj.type === 'good') {
               combo++;
@@ -344,6 +560,7 @@ export default function Game() {
               setScore(currentScore);
               setComboCount(combo);
               setFloatingText(`+${points}`);
+              playCollectSound();
               setTimeout(() => setFloatingText(''), 1000);
             } else if (obj.type === 'bad') {
               currentScore -= 10;
@@ -351,6 +568,7 @@ export default function Game() {
               combo = 0;
               setComboCount(0);
               setFloatingText('-10');
+              playHitSound();
               setTimeout(() => setFloatingText(''), 1000);
               
               // Screen shake
@@ -365,7 +583,59 @@ export default function Game() {
               setBullRunActive(true);
               gameSpeed *= 1.5;
               setFloatingText('BULL RUN!');
+              playCollectSound();
               setTimeout(() => setFloatingText(''), 1000);
+            } else if (obj.type === 'meteor') {
+              // Hit by meteor
+              if (obj.lane === currentLane) {
+                currentScore -= 20;
+                setScore(currentScore);
+                combo = 0;
+                setComboCount(0);
+                setFloatingText('-20 METEOR HIT!');
+                playHitSound();
+                setTimeout(() => setFloatingText(''), 1000);
+                
+                // Spin car 360 degrees
+                carSpinning = true;
+                spinRotation = 0;
+                
+                // Screen shake
+                camera.position.x += (Math.random() - 0.5) * 0.8;
+                camera.position.y += (Math.random() - 0.5) * 0.8;
+                setTimeout(() => {
+                  camera.position.x = 0;
+                  camera.position.y = 8;
+                }, 150);
+              }
+            } else if (obj.type === 'gacha') {
+              // Gacha box effects
+              const effect = obj.gachaEffect!;
+              
+              if (effect === 'jackpot') {
+                currentScore += 50;
+                setScore(currentScore);
+                setFloatingText('💰 JACKPOT +50!');
+                playCashRegisterSound();
+              } else if (effect === 'bullrun') {
+                bullRunTimer = 5;
+                setBullRunActive(true);
+                gameSpeed *= 1.5;
+                combo = Math.max(combo, 3);
+                setComboCount(combo);
+                setFloatingText('🚀 BULL RUN x2!');
+                playCollectSound();
+              } else if (effect === 'fog') {
+                fogEffect = 3;
+                setFloatingText('🌫️ FUD FOG!');
+                playHitSound();
+              } else if (effect === 'mini') {
+                miniModeTimer = 5;
+                setFloatingText('🔬 MINI MODE!');
+                playCollectSound();
+              }
+              
+              setTimeout(() => setFloatingText(''), 1500);
             }
           } else {
             // Missed a good gate (Lazy Tax)
@@ -452,6 +722,12 @@ export default function Game() {
         </div>
       )}
       
+      {fudStormWarning && (
+        <div className="absolute top-1/3 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-orange-500 font-bold text-5xl animate-pulse drop-shadow-[0_0_20px_rgba(255,102,0,1)]">
+          ⚠️ WARNING: FUD STORM! ⚠️
+        </div>
+      )}
+      
       {floatingText && (
         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-white font-bold text-4xl animate-bounce">
           {floatingText}
@@ -499,11 +775,22 @@ export default function Game() {
       {/* Instructions */}
       <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-white text-center">
         <p className="text-lg">Use ← → or A/D to switch lanes</p>
-        <p className="text-sm opacity-70">Green gates: +10 | Red gates: -10 | Blue rockets: Bull Run Mode</p>
+        <p className="text-sm opacity-70">Green gates: +10 | Red gates: -10 | Blue rockets: Bull Run | Purple boxes: Mystery!</p>
+        <p className="text-xs opacity-50 mt-1">Watch out for FUD Storms! 🌩️</p>
       </div>
     </div>
   );
 }
+
+
+
+
+
+
+
+
+
+
 
 
 
